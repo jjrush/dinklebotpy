@@ -88,7 +88,7 @@ async def subtract(ctx, activity, points):
 
 @bot.hybrid_command(name="run", description="Log a running session (miles)")
 async def run(ctx, miles):
-    points = float(miles)
+    points = round(float(miles),2)
     name = str(ctx.author)
     activity = "running"
     newTotal = updateChallengerPoints(name, points, activity)
