@@ -1,6 +1,9 @@
 Activity,Weighting
-Running,0.5
-Weights,2
-Skiing,0.5
-Hiking,0.5
-Walking,0.5
+run,0.5
+running,0.5
+weights,2
+skiing,0.5
+hiking,0.5
+hike,0.5
+walking,0.5
+walk,0.5

@@ -75,35 +75,38 @@ def init():
 init()
 
 #------ PANDAS OPERATIONS ----------------------------------------------------
+def getActivities(dataframe):
+    return list(dataframe.index.values)
+
 def getChallengerTotal(dataframe, name):
     df = dataframe.copy(deep=True)
-    df['Total'] = df.sum(axis=1, numeric_only=True)
+    df['total'] = df.sum(axis=1, numeric_only=True)
     try:
-        total = df["Total"][name]
+        total = df["total"][name]
     except:
         return -1
     return total
 
 def getLeaderboard(dataframe):
     df = dataframe.copy(deep=True)
-    df['Total'] = df.loc[:, df.columns != "Total"].sum(axis=1, numeric_only=True)
-    df = df.sort_values(by="Total", ascending=False)
+    df['total'] = df.loc[:, df.columns != "total"].sum(axis=1, numeric_only=True)
+    df = df.sort_values(by="total", ascending=False)
     index = df.index
     idx = []
     for i in index:
         i = i[:-5] # strip off the #0001 at the end of everyone's names
         idx.append(i)
     df2 = df.reindex(idx) # create a new df with these new indices
-    df2["Running"] = df["Running"].values
-    df2["Weights"] = df["Weights"].values
-    df2["Total"] = df["Total"].values
+    df2["running"] = df["running"].values
+    df2["weights"] = df["weights"].values
+    df2["total"] = df["total"].values
     
     return '```' + df2.to_string() + '```'
 
 def getOverallTotal(dataframe):
     df = dataframe.copy(deep=True)
-    df['Total'] = dataframe.sum(axis=1, numeric_only=True)
-    return df['Total'].sum()
+    df['total'] = df.sum(axis=1, numeric_only=True)
+    return df['total'].sum()
 
 def addChallenger(dataframe, name):
     df = dataframe.copy(deep=True)
