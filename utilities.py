@@ -76,27 +76,46 @@ init()
 
 #------ PANDAS OPERATIONS ----------------------------------------------------
 def getChallengerTotal(dataframe, name):
-    dataframe['Total'] = dataframe.sum(axis=1, numeric_only=True)
+    df = dataframe.copy(deep=True)
+    df['Total'] = df.sum(axis=1, numeric_only=True)
     try:
-        total = dataframe["Total"][name]
+        total = df["Total"][name]
     except:
         return -1
     return total
 
+def getLeaderboard(dataframe):
+    df = dataframe.copy(deep=True)
+    df['Total'] = df.loc[:, df.columns != "Total"].sum(axis=1, numeric_only=True)
+    df = df.sort_values(by="Total", ascending=False)
+    index = df.index
+    idx = []
+    for i in index:
+        i = i[:-5] # strip off the #0001 at the end of everyone's names
+        idx.append(i)
+    df2 = df.reindex(idx) # create a new df with these new indices
+    df2["Running"] = df["Running"].values
+    df2["Weights"] = df["Weights"].values
+    df2["Total"] = df["Total"].values
+    
+    return '```' + df2.to_string() + '```'
+
 def getOverallTotal(dataframe):
-    df = dataframe
+    df = dataframe.copy(deep=True)
     df['Total'] = dataframe.sum(axis=1, numeric_only=True)
     return df['Total'].sum()
 
 def addChallenger(dataframe, name):
-    series = pd.Series(dict(zip(dataframe.columns,[0] * dataframe.shape[1]))).rename(name)
-    dataframe = dataframe.append(series)
-    save(dataframe, CHALLENGE_FILE)
-    return dataframe
+    df = dataframe.copy(deep=True)
+    series = pd.Series(dict(zip(df.columns,[0] * df.shape[1]))).rename(name)
+    df = dataframe.df(series)
+    save(df, CHALLENGE_FILE)
+    return df
 
 def changeGoal(dataframe, goal):
-    dataframe["Goal"][CHALLENGE] = goal
-    save(dataframe, GOAL_FILE)
+    df = dataframe.copy(deep=True)
+    df["Goal"][CHALLENGE] = goal
+    save(df, GOAL_FILE)
 
 def getWeight(row):
     global ACTIVITIES
@@ -133,7 +152,7 @@ def setupNewMonth():
         goalDf = pd.read_csv(GOAL_FILE, index_col=0)
 
         # refresh all of the globals
-        init(2023, 1)
+        init()
 
         # add a new row for this month's goal
         series = pd.Series(dict(zip(goalDf.columns,[0] * goalDf.shape[1]))).rename(CHALLENGE)
