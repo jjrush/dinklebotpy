@@ -97,7 +97,7 @@ def getLeaderboard(dataframe):
         i = i[:-5] # strip off the #0001 at the end of everyone's names
         idx.append(i)
     df2 = df.reindex(idx) # create a new df with these new indices
-    df2["running"] = df["running"].values
+    df2["cardio"] = df["cardio"].values
     df2["weights"] = df["weights"].values
     df2["total"] = df["total"].values
     
@@ -145,29 +145,32 @@ def isNewMonth():
         return True
 
 def setupNewMonth():
-    if(isNewMonth()):
-        # reset the leaderboard
-        df = readChallengersFile()
-        df = df[0:0]
-        
-        # get last month's goal dataframe
-        goal = getCurrentGoal()
-        goalDf = pd.read_csv(GOAL_FILE, index_col=0)
+    global CHALLENGE
+    global CHALLENGE_FILE
+    global GOAL_FILE
+    
+    # reset the leaderboard
+    df = readChallengersFile()
+    df = df[0:0]
+    
+    # get last month's goal dataframe
+    goal = getCurrentGoal()
+    goalDf = pd.read_csv(GOAL_FILE, index_col=0)
 
-        # refresh all of the globals
-        init()
+    # refresh all of the globals
+    init()
 
-        # add a new row for this month's goal
-        series = pd.Series(dict(zip(goalDf.columns,[0] * goalDf.shape[1]))).rename(CHALLENGE)
-        goalDf = goalDf.append(series)
-        goalDf["Goal"][CHALLENGE] = goal
+    # add a new row for this month's goal
+    series = pd.Series(dict(zip(goalDf.columns,[0] * goalDf.shape[1]))).rename(CHALLENGE)
+    goalDf = goalDf.append(series)
+    goalDf["Goal"][CHALLENGE] = goal
 
-        # save files
-        save(goalDf, GOAL_FILE)
-        save(df, CHALLENGE_FILE)
+    # save files
+    save(goalDf, GOAL_FILE)
+    save(df, CHALLENGE_FILE)
 
-        if(exists(CHALLENGE_FILE)):
-            return True
+    if(exists(CHALLENGE_FILE)):
+        return True
     return False
 
 def isEmpty(dataframe):
