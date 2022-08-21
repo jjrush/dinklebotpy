@@ -1,7 +1,8 @@
 import discord
-from discord.ext import commands
+from discord.ext import tasks, commands
 import json
 import utilities
+from datetime import datetime
 
 description = "Dinklebot"
 intents = discord.Intents.default()
@@ -21,7 +22,7 @@ def updateChallengerPoints(name, points, activity):
     weight = utilities.getWeight(activity)
     total = float(points) * float(weight)
 
-    CHALLENGERS[activity][name] = round(total + CHALLENGERS[activity][name])
+    CHALLENGERS[activity][name] = round(total + CHALLENGERS[activity][name],2)
     utilities.save(CHALLENGERS, utilities.CHALLENGE_FILE)
 
     CHALLENGERS = utilities.readChallengersFile()
@@ -31,21 +32,17 @@ def updateChallengerPoints(name, points, activity):
 @bot.event
 async def on_ready():
     await bot.tree.sync()
+    setupNewMonth.start()
     print(f'Logged in as {bot.user.name} : {bot.user.id}')
     print('------')
 
+#----------------------------------------------------------------------------
 @bot.hybrid_command(name="change", description="Changes the current challenge's total point goal")
 async def change(ctx, goal):
     global GOAL
     utilities.changeGoal(utilities.readGoalFile(), goal)
     GOAL = utilities.getCurrentGoal()
     await ctx.send(f"Goal updated to {GOAL}")
-
-@bot.hybrid_command(name="goal", description="Get the current challenge's total point goal")
-async def goal(ctx):
-    global GOAL
-    GOAL = utilities.getCurrentGoal()
-    await ctx.send(f"Goal for {utilities.CHALLENGE}: {GOAL} pts")
 
 @bot.hybrid_command(name="points", description="Get your total points in the curent challenge")
 async def points(ctx):
@@ -55,12 +52,8 @@ async def points(ctx):
 
 @bot.hybrid_command(name="total", description="Get the total points of everybody towards the curent goal")
 async def total(ctx):
-    name = str(ctx.author)
     total = utilities.getOverallTotal(CHALLENGERS)
-    if(total != -1):
-        await ctx.send(f"Total: {total}/{GOAL}")
-    else:
-        await ctx.send(f"Sorry, challenger {name} not found")
+    await ctx.send(f"Total: {total}/{GOAL}")
 
 @bot.hybrid_command(name="subtract", description="Subtract points from your total (in case you added more than you meant to or typoed)")
 async def subtract(ctx, activity, points):
@@ -73,10 +66,10 @@ async def subtract(ctx, activity, points):
         await ctx.send("Value to subtract can't be negative")
         return
     if( activity not in utilities.getActivities(utilities.ACTIVITIES)):
-        await ctx.send(f"Couldnt find an activity named {activity} in activity list")
+        await ctx.send(f"Couldnt find an activity named {activity} in activity list. Supported activities are cardio and weights")
         return
 
-    CHALLENGERS[activity][name] = round(CHALLENGERS[activity][name] - points)
+    CHALLENGERS[activity][name] = round(CHALLENGERS[activity][name] - points, 2)
     utilities.save(CHALLENGERS, utilities.CHALLENGE_FILE)
     CHALLENGERS = utilities.readChallengersFile()
     
@@ -86,13 +79,13 @@ async def subtract(ctx, activity, points):
     await ctx.send(f"Challenger {name} now has {activityTotal} {activity} points and {newTotal} total points")
         
 
-@bot.hybrid_command(name="run", description="Log a running session (miles)")
-async def run(ctx, miles):
+@bot.hybrid_command(name="cardio", description="Log a cardio session (miles)")
+async def cardio(ctx, miles):
     points = round(float(miles),2)
     name = str(ctx.author)
-    activity = "running"
+    activity = "cardio"
     newTotal = updateChallengerPoints(name, points, activity)
-    await ctx.send(f"{miles} mile run worth {newTotal} points added to challenger {name}")
+    await ctx.send(f"{miles} mile cardio session worth {newTotal} points added to challenger {name}")
 
 @bot.hybrid_command(name="weights", description="Log a weights session (minutes)")
 async def weights(ctx, minutes):
@@ -105,6 +98,18 @@ async def weights(ctx, minutes):
 @bot.hybrid_command(name="leaderboard", description="Get the current leaderboard")
 async def leaderboard(ctx):
     await ctx.send(utilities.getLeaderboard(CHALLENGERS))
+
+@bot.hybrid_command(name="sync", description="Sync the commands on the server")
+async def sync(ctx):
+    await bot.tree.sync()
+    await ctx.send("Synced")
+
+#----------------------------------------------------------------------------
+@tasks.loop(hours=24)
+async def setupNewMonth():
+    date = datetime.now()
+    if date.day == 1:
+        utilities.setupNewMonth()
 
 #----------------------------------------------------------------------------
 token = open("token.json")
