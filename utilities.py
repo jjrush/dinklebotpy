@@ -106,7 +106,7 @@ def getLeaderboard(dataframe):
 def getOverallTotal(dataframe):
     df = dataframe.copy(deep=True)
     df['total'] = df.sum(axis=1, numeric_only=True)
-    return df['total'].sum()
+    return round(df['total'].sum(),2)
 
 def addChallenger(dataframe, name):
     df = dataframe.copy(deep=True)
