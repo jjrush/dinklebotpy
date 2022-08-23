@@ -26,7 +26,7 @@ def updateChallengerPoints(name, activity, points):
     weight = utilities.getWeight(activity)
     total = float(points) * float(weight)
 
-    CHALLENGERS[activity][name] = round(total + CHALLENGERS[activity][name],2)
+    CHALLENGERS[activity][name] = round(total + float(CHALLENGERS[activity][name]),2)
     utilities.save(CHALLENGERS, utilities.CHALLENGE_FILE)
 
     CHALLENGERS = utilities.readChallengersFile()
@@ -34,10 +34,10 @@ def updateChallengerPoints(name, activity, points):
 
 def subtractChallengerPoints(name, activity, points):
     global CHALLENGERS
-    points = int(points)
+    points = float(points)
     activity = activity.lower()
 
-    CHALLENGERS[activity][name] = round(CHALLENGERS[activity][name] - points, 2)
+    CHALLENGERS[activity][name] = round(float(CHALLENGERS[activity][name]) - points, 2)
     utilities.save(CHALLENGERS, utilities.CHALLENGE_FILE)
     CHALLENGERS = utilities.readChallengersFile()
     
@@ -140,15 +140,35 @@ async def sync(ctx):
     await bot.tree.sync()
     await ctx.send("Synced")
 
+@bot.hybrid_command(name="refresh", description="Refresh the database")
+async def refresh(ctx):
+    global CHALLENGERS
+    try:
+        CHALLENGERS = utilities.readChallengersFile()
+    except:
+        await ctx.send("Something went wrong :(")
+        return
+    await ctx.send("Successfully refreshed database")
+
 @bot.hybrid_command(name="modify", description="ADMIN ONLY: Modify a challenger's points")
 async def sync(ctx, challenger, operation, activity, points):
+    points = float(points)
     name = str(ctx.author)
     if( name not in ADMINS ):
         await ctx.send("Not authorized to use this command. If you want to change your own points use /cardio, /weights or /subtract")
     try:
-        if( operation == "subtract" or operation == "sub" or operation == "-"):
+        if( operation == "subtract" or operation == "sub" or operation == "-" or operation == "minus"):
             activityTotal = subtractChallengerPoints(challenger, activity, points)
-            await ctx.send(f"Succes, challenger {challenger} now has {activityTotal} poitns in {activity}")
+            await ctx.send(f"Success, subtracted {points} points from challenger {challenger}. They have {activityTotal} points in {activity} now")
+        if( operation == "add" or operation == "+"  or operation == "plus"):
+            val = 0
+            if( activity == "weights" ):
+                val = points / 2
+            else:
+                val = points * 2
+            updateChallengerPoints(str(challenger), activity, val)
+            activityTotal = CHALLENGERS[activity][challenger]
+            await ctx.send(f"Success, added {points} points to challenger {challenger}. They have {activityTotal} points in {activity} now")
     except:
         await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
 
