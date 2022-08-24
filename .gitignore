@@ -2,3 +2,4 @@ token.json
 __pycache__/
 bot-env/
 backups/
+challenges/
