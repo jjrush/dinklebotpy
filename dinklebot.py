@@ -17,12 +17,12 @@ GOAL = utilities.getCurrentGoal()
 ADMINS = ["ToastyWombat#0001", "Verus#0077"]
 
 #----------------------------------------------------------------------------
-def addChallenger(name):
-    global CHALLENGERS
-    CHALLENGERS = utilities.addChallenger(name)
 
 def updateChallengerPoints(name, activity, points):
     global CHALLENGERS
+    indx = list(CHALLENGERS.index)
+    if ( name not in indx ):
+        CHALLENGERS = utilities.addChallenger(CHALLENGERS, name)
     weight = utilities.getWeight(activity)
     total = float(points) * float(weight)
 
@@ -34,6 +34,8 @@ def updateChallengerPoints(name, activity, points):
 
 def subtractChallengerPoints(name, activity, points):
     global CHALLENGERS
+    if ( name not in CHALLENGERS.index ):
+        return -1
     points = float(points)
     activity = activity.lower()
 
@@ -96,10 +98,12 @@ async def subtract(ctx, activity, points):
         await ctx.send("Value to subtract can't be negative")
         return
     if( activity not in utilities.getActivities(utilities.ACTIVITIES)):
-        await ctx.send(f"Couldnt find an activity named {activity} in activity list. Supported activities are cardio and weights")
+        await ctx.send(f"Couldnt find an activity named {activity} in activity list")
         return
     try: 
         activityTotal = subtractChallengerPoints(name, activity, points)
+        if( activityTotal == -1 ):
+            await ctx.send("Hey you aren't a challenger yet. You have to add points before you can take any away!")
         newTotal = utilities.getChallengerTotal(CHALLENGERS, name)
     except:
         await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
@@ -123,11 +127,11 @@ async def weights(ctx, minutes):
     points = round(float(minutes)/60,2)
     name = str(ctx.author)
     activity = "weights"
-    try: 
-        newTotal = updateChallengerPoints(name, activity, points)  
-    except:
-        await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
-        return
+# try: 
+    newTotal = updateChallengerPoints(name, activity, points)  
+# except:
+    # await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
+    # return
     await ctx.send(f"{minutes} minute workout worth {newTotal} points added to challenger {name}")
 
 @bot.hybrid_command(name="leaderboard", description="Get the current leaderboard")

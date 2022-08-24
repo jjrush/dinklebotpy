@@ -111,7 +111,7 @@ def getOverallTotal(dataframe):
 def addChallenger(dataframe, name):
     df = dataframe.copy(deep=True)
     series = pd.Series(dict(zip(df.columns,[0] * df.shape[1]))).rename(name)
-    df = dataframe.df(series)
+    df = dataframe.append(series)
     save(df, CHALLENGE_FILE)
     return df
 
