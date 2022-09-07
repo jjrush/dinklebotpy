@@ -1,3 +1,4 @@
+from calendar import month
 from logging import exception
 import os
 from os.path import exists
@@ -67,7 +68,10 @@ def init():
     CHALLENGE = f"{YEAR}-{MONTH}"
     CHALLENGE_FILE = os.path.join("challenges", CHALLENGE + ".csv")
 
-    CHALLENGE_PREV = f"{YEAR_PREV}-{MONTH_PREV}"
+    if( MONTH_PREV == "12" ):
+        CHALLENGE_PREV = f"{YEAR_PREV}-{MONTH_PREV}"
+    else:
+        CHALLENGE_PREV = f"{YEAR}-{MONTH_PREV}"
     CHALLENGE_PREV_FILE = os.path.join("challenges", CHALLENGE_PREV + ".csv")
 
     ACTIVITIES = readActivitiesFile()
@@ -130,19 +134,11 @@ def getCurrentGoal():
         return df["Goal"][CHALLENGE]
 
 def getPreviousGoal():
+    global GOAL_FILE
+    global CHALLENGE_PREV
     if( exists(GOAL_FILE) ):
         df = pd.read_csv(GOAL_FILE, index_col=0)
         return df["Goal"][CHALLENGE_PREV]
-
-#------ GENERIC OPERATIONS ----------------------------------------------------
-def save(dataframe, file):
-    dataframe.to_csv(file)
-
-def isNewMonth():
-    if(exists(CHALLENGE_FILE)):
-        return False
-    else:
-        return True
 
 def setupNewMonth():
     global CHALLENGE
@@ -154,7 +150,11 @@ def setupNewMonth():
     df = df[0:0]
     
     # get last month's goal dataframe
-    goal = getCurrentGoal()
+    goal = 0
+    try:
+        goal = getCurrentGoal()
+    except:
+        goal = getPreviousGoal()
     goalDf = pd.read_csv(GOAL_FILE, index_col=0)
 
     # refresh all of the globals
@@ -172,6 +172,16 @@ def setupNewMonth():
     if(exists(CHALLENGE_FILE)):
         return True
     return False
+    
+#------ GENERIC OPERATIONS ----------------------------------------------------
+def save(dataframe, file):
+    dataframe.to_csv(file)
+
+def isNewMonth():
+    if(exists(CHALLENGE_FILE)):
+        return False
+    else:
+        return True
 
 def isEmpty(dataframe):
     if( len(dataframe.index) == 0 ):
