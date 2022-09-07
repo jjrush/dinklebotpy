@@ -1,7 +1,9 @@
+from distutils.core import setup
 import discord
 from discord.ext import tasks, commands
 
 import os
+import sys
 import json
 import shutil
 import utilities
@@ -12,9 +14,19 @@ intents = discord.Intents.default()
 intents.messages = True
 bot = commands.Bot(command_prefix='$', description=description, intents=intents)
 #----------------------------------------------------------------------------
-CHALLENGERS = utilities.readChallengersFile()
-GOAL = utilities.getCurrentGoal()
-ADMINS = ["ToastyWombat#0001", "Verus#0077"]
+try:
+    CHALLENGERS = utilities.readChallengersFile()
+    GOAL = utilities.getCurrentGoal()
+except:
+    if( utilities.isNewMonth()):
+        utilities.setupNewMonth()
+        try:
+            CHALLENGERS = utilities.readChallengersFile()
+            GOAL = utilities.getCurrentGoal()
+        except:
+            printf("Couldn't run")
+            sys.exit(1)
+ADMINS = ["ToastyWombat#9078", "Verus#0077"]
 
 #----------------------------------------------------------------------------
 
@@ -83,12 +95,13 @@ async def points(ctx):
 @bot.hybrid_command(name="total", description="Get the total points of everybody towards the curent goal")
 async def total(ctx):
     global CHALLENGERS
+    global GOAL
     try: 
         total = utilities.getOverallTotal(CHALLENGERS)
+        await ctx.send(f"Total: {total}/{GOAL}")
     except:
         await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
         return
-    await ctx.send(f"Total: {total}/{GOAL}")
 
 @bot.hybrid_command(name="subtract", description="Subtract points from your total (in case you added more than you meant to or typoed)")
 async def subtract(ctx, activity, points):
@@ -127,11 +140,11 @@ async def weights(ctx, minutes):
     points = round(float(minutes)/60,2)
     name = str(ctx.author)
     activity = "weights"
-# try: 
-    newTotal = updateChallengerPoints(name, activity, points)  
-# except:
-    # await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
-    # return
+    try: 
+        newTotal = updateChallengerPoints(name, activity, points)  
+    except:
+        await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
+        return
     await ctx.send(f"{minutes} minute workout worth {newTotal} points added to challenger {name}")
 
 @bot.hybrid_command(name="leaderboard", description="Get the current leaderboard")
@@ -160,6 +173,7 @@ async def sync(ctx, challenger, operation, activity, points):
     name = str(ctx.author)
     if( name not in ADMINS ):
         await ctx.send("Not authorized to use this command. If you want to change your own points use /cardio, /weights or /subtract")
+        return
     try:
         if( operation == "subtract" or operation == "sub" or operation == "-" or operation == "minus"):
             activityTotal = subtractChallengerPoints(challenger, activity, points)
@@ -177,7 +191,7 @@ async def sync(ctx, challenger, operation, activity, points):
         await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
 
 #----------------------------------------------------------------------------
-@tasks.loop(hours=24)
+@tasks.loop(hours=8)
 async def setupNewMonth():
     date = datetime.now()
     if date.day == 1:
@@ -198,5 +212,8 @@ async def saveBackup():
         print("Failed saving backup")
 
 #----------------------------------------------------------------------------
-token = open("token.json")
-bot.run(json.load(token)["token"])
+if __name__ == "__main__":
+    if( utilities.isNewMonth() ):
+        utilities.setupNewMonth()
+    token = open("token.json")
+    bot.run(json.load(token)["token"])
