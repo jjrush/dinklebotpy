@@ -150,7 +150,12 @@ async def weights(ctx, minutes):
 @bot.hybrid_command(name="leaderboard", description="Get the current leaderboard")
 async def leaderboard(ctx):
     global CHALLENGERS
-    await ctx.send(utilities.getLeaderboard(CHALLENGERS))
+    leaderboard = ""
+    try:
+        leaderboard = utilities.getLeaderboard(CHALLENGERS)
+        await ctx.send(leaderboard)
+    except:
+        await ctx.send("Whoops that didn't work. Something went wrong on the backend :(")
 
 @bot.hybrid_command(name="sync", description="Sync the commands on the server")
 async def sync(ctx):

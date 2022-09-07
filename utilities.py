@@ -104,8 +104,15 @@ def getLeaderboard(dataframe):
     df2["cardio"] = df["cardio"].values
     df2["weights"] = df["weights"].values
     df2["total"] = df["total"].values
+
+    dflist =  df2.to_string().split('\n')
+    dflist[0] = dflist[0].replace("    ","name", 1)
+    dflist.pop(1)
+    dfstr = ""
+    for line in dflist:
+        dfstr = dfstr + line + "\n"
     
-    return '```' + df2.to_string() + '```'
+    return '```\n' + dfstr + '\n```'
 
 def getOverallTotal(dataframe):
     df = dataframe.copy(deep=True)
